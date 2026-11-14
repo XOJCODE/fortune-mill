@@ -1,0 +1,1277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Fortune Mill — Escape the Rooms</title>
+<style>
+:root{
+  --bg:#101014; --panel:#1b1c22; --panel2:#23242d; --line:#33343f;
+  --gold:#f5c542; --gold2:#ffdf7e; --ink:#f2ead2; --dim:#9a97a8;
+  --red:#e5484d; --green:#46a758; --blue:#5b8def; --orange:#f0833a; --purple:#9a6ee8;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+  font-family:Verdana,Geneva,"Segoe UI",system-ui,sans-serif;}
+#app{max-width:560px;margin:0 auto;padding:8px 8px 40px;}
+h1{font-size:19px;margin:2px 0;letter-spacing:2px;color:var(--gold);
+  font-family:"Arial Black",Arial,sans-serif;text-shadow:0 2px 0 #6b5410;}
+.sub{font-size:12px;color:var(--dim);margin:0 0 6px;}
+.num{font-family:"Courier New",monospace;font-weight:bold;letter-spacing:1px;}
+button{font-family:inherit;cursor:pointer;}
+#topbar{background:var(--panel);border:2px solid var(--line);border-radius:10px;padding:8px;}
+#wallets{display:flex;flex-wrap:wrap;gap:6px;}
+.wallet{background:var(--panel2);border:1px solid var(--line);border-radius:8px;
+  padding:4px 8px;font-size:13px;min-width:31%;flex:1;}
+.wallet b{color:var(--gold);font-size:15px;}
+.wallet .rate{display:block;font-size:11px;color:var(--dim);}
+#metaline{display:flex;justify-content:space-between;align-items:center;margin-top:6px;font-size:12px;color:var(--dim);}
+#metaline button{background:var(--panel2);color:var(--ink);border:1px solid var(--line);
+  border-radius:6px;padding:4px 10px;font-size:12px;}
+#tabs{display:flex;gap:5px;margin:8px 0;}
+.rtab{flex:1;background:var(--panel);border:2px solid var(--line);border-radius:10px;
+  color:var(--dim);padding:8px 2px;font-size:12px;font-weight:bold;text-align:center;}
+.rtab.on{color:#141310;border-color:var(--gold);}
+.rtab.locked{opacity:.55;}
+.rtab .lk{display:block;font-size:10px;font-weight:normal;}
+#roomhead{background:var(--panel);border:2px solid var(--line);border-radius:10px;
+  padding:8px;display:flex;gap:10px;align-items:center;}
+#guardian{width:104px;height:104px;flex:0 0 104px;}
+#guardian svg{width:104px;height:104px;}
+#roominfo{flex:1;min-width:0;}
+#roominfo h2{margin:0 0 2px;font-size:16px;}
+#gname{font-size:12px;color:var(--dim);margin:0 0 6px;}
+.barwrap{background:#0a0a0d;border:1px solid var(--line);border-radius:7px;height:22px;position:relative;overflow:hidden;}
+.barfill{height:100%;width:0%;transition:width .3s;}
+.bartext{position:absolute;inset:0;text-align:center;font-size:12px;line-height:22px;
+  font-family:"Courier New",monospace;font-weight:bold;color:#fff;text-shadow:0 1px 2px #000;}
+#stage{background:var(--panel);border:2px solid var(--line);border-radius:10px;
+  padding:10px;margin-top:8px;position:relative;min-height:300px;}
+#stage h3{margin:0 0 6px;font-size:14px;color:var(--gold2);}
+.hint{font-size:12px;color:var(--dim);margin:4px 0 8px;}
+.bigbtn{display:block;width:100%;background:linear-gradient(#8a6d1f,#6b5410);
+  border:2px solid var(--gold);color:#fff8dd;border-radius:10px;
+  padding:13px;font-size:16px;font-weight:bold;letter-spacing:1px;margin-top:8px;}
+.bigbtn:active{transform:scale(.98);}
+.bigbtn:disabled{opacity:.45;}
+.smallbtn{background:var(--panel2);color:var(--ink);border:1px solid var(--line);
+  border-radius:7px;padding:7px 10px;font-size:13px;}
+.smallbtn:disabled{opacity:.45;}
+#boardwrap{text-align:center;position:relative;}
+#board{width:min(300px,86vw);height:min(300px,86vw);touch-action:manipulation;}
+.dartmark{pointer-events:none;}
+.floaty{position:absolute;font-family:"Courier New",monospace;font-weight:bold;
+  color:var(--gold2);font-size:17px;pointer-events:none;text-shadow:0 2px 3px #000;
+  animation:floatup 1.1s ease-out forwards;z-index:5;}
+@keyframes floatup{from{opacity:1;transform:translateY(0);}to{opacity:0;transform:translateY(-52px);}}
+#cells{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:8px 0;}
+.cell{height:64px;border-radius:9px;border:2px solid var(--line);font-size:13px;
+  font-weight:bold;display:flex;align-items:center;justify-content:center;text-align:center;
+  background:repeating-linear-gradient(45deg,#3a3b47,#3a3b47 8px,#33343f 8px,#33343f 16px);
+  color:var(--dim);padding:2px;user-select:none;}
+.cell.open{background:#141310;color:var(--gold2);border-color:var(--gold);}
+.cell.win{background:#3d3410;color:#ffe98a;border-color:var(--gold);}
+.cell.jack{background:#5b21b6;color:#fff;border-color:#c4a4ff;}
+#diceRow{display:flex;gap:8px;justify-content:center;margin:8px 0;flex-wrap:wrap;}
+.die{width:56px;height:56px;background:#ece7d8;border-radius:10px;position:relative;
+  box-shadow:inset 0 0 0 3px #b9b2a0;}
+.pip{position:absolute;width:11px;height:11px;border-radius:50%;background:#22242c;}
+.shake{animation:shk .12s infinite;}
+@keyframes shk{0%{transform:rotate(-4deg);}50%{transform:rotate(4deg) translateY(-3px);}100%{transform:rotate(-3deg);}}
+#stacks{font-size:12px;margin-top:6px;}
+.stackchip{display:inline-block;background:#2c2140;border:1px solid var(--purple);
+  color:#d9c8ff;border-radius:20px;padding:3px 9px;margin:2px;font-size:12px;}
+#pach{width:100%;max-width:330px;display:block;margin:4px auto;}
+#slots{display:flex;gap:3px;}
+.slot{flex:1;text-align:center;font-size:11px;background:var(--panel2);
+  border:1px solid var(--line);border-radius:5px;padding:4px 0;font-family:"Courier New",monospace;font-weight:bold;}
+#dishRow{display:flex;gap:7px;}
+.dish{flex:1;background:var(--panel2);border:2px solid var(--line);border-radius:9px;
+  padding:8px 5px;font-size:12px;text-align:center;color:var(--ink);}
+.dish b{display:block;font-size:13px;color:var(--gold2);margin-bottom:4px;}
+#wheelwrap{text-align:center;position:relative;}
+#wheelSvg{width:min(300px,86vw);height:min(300px,86vw);}
+#wheelPointer{position:absolute;top:-2px;left:50%;transform:translateX(-50%);
+  width:0;height:0;border-left:13px solid transparent;border-right:13px solid transparent;
+  border-top:22px solid var(--gold);z-index:3;}
+#hpwrap{margin-top:6px;}
+#shop{margin-top:8px;background:var(--panel);border:2px solid var(--line);border-radius:10px;padding:8px;}
+#shop h3{margin:0;font-size:14px;color:var(--gold2);}
+#shophead{display:flex;justify-content:space-between;align-items:center;}
+#shophead label{font-size:12px;color:var(--dim);}
+.upg{display:flex;gap:8px;align-items:center;background:var(--panel2);
+  border:1px solid var(--line);border-radius:9px;padding:7px;margin-top:6px;}
+.upg .ui{flex:1;min-width:0;}
+.upg .un{font-size:13px;font-weight:bold;}
+.upg .ud{font-size:11px;color:var(--dim);}
+.upg .uc{font-size:12px;color:var(--gold);white-space:nowrap;text-align:right;}
+.buybtn{background:#5c4a12;border:2px solid var(--gold);color:#ffedb5;border-radius:8px;
+  padding:9px 10px;font-size:13px;font-weight:bold;min-width:74px;}
+.buybtn:disabled{opacity:.4;}
+.upg.maxed{opacity:.65;}
+.upg.ngx{border-color:var(--purple);}
+.tagng{color:#c4a4ff;font-size:10px;border:1px solid var(--purple);border-radius:4px;padding:0 4px;}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.78);display:none;z-index:50;
+  align-items:center;justify-content:center;padding:14px;}
+.modal.show{display:flex;}
+.mbox{background:var(--panel);border:2px solid var(--gold);border-radius:12px;
+  padding:16px;max-width:480px;width:100%;max-height:88vh;overflow:auto;}
+.mbox h2{margin:0 0 8px;color:var(--gold);font-size:18px;}
+.mbox p{font-size:13px;line-height:1.45;}
+.mbox .bigbtn{margin-top:10px;}
+#toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:60;
+  background:#2c2140;border:2px solid var(--purple);color:#efe8ff;border-radius:10px;
+  padding:10px 14px;font-size:13px;font-weight:bold;display:none;max-width:92vw;text-align:center;}
+select,input[type=checkbox]{accent-color:var(--gold);}
+.setrow{display:flex;justify-content:space-between;align-items:center;padding:8px 0;
+  border-bottom:1px solid var(--line);font-size:13px;}
+.danger{background:#5c1618 !important;border-color:var(--red) !important;color:#ffd7d7 !important;}
+</style>
+</head>
+<body>
+<div id="app">
+  <h1>FORTUNE MILL</h1>
+  <p class="sub">You were meant to be packaged into Box #724. You escaped through a crack in the wall. Now gamble your way past five guardians.</p>
+  <div id="topbar">
+    <div id="wallets"></div>
+    <div id="metaline">
+      <span id="metal">NG+ 0</span>
+      <span id="runtime"></span>
+      <button id="settingsBtn">Settings</button>
+    </div>
+  </div>
+  <div id="tabs"></div>
+  <div id="roomhead">
+    <div id="guardian"></div>
+    <div id="roominfo">
+      <h2 id="roomtitle">Room 1</h2>
+      <p id="gname"></p>
+      <div class="barwrap"><div class="barfill" id="tollfill"></div><div class="bartext" id="tolltext"></div></div>
+      <p class="hint" id="tollhint" style="margin:4px 0 0;"></p>
+    </div>
+  </div>
+  <div id="stage"></div>
+  <div id="shop">
+    <div id="shophead"><h3 id="shoptitle">Upgrades</h3>
+      <label><input type="checkbox" id="buymax"> Buy MAX</label></div>
+    <div id="shoplist"></div>
+  </div>
+  <p class="sub" style="margin-top:10px;">Autosaves every 5s. Automation earns in every unlocked room, even while you are elsewhere. Offline earnings capped at 8 hours.</p>
+</div>
+
+<div class="modal" id="sceneModal"><div class="mbox">
+  <h2 id="sceneTitle"></h2><p id="sceneText"></p>
+  <button class="bigbtn" id="sceneOk">Onward</button>
+</div></div>
+
+<div class="modal" id="offlineModal"><div class="mbox">
+  <h2>The Mill Kept Turning</h2><p id="offlineText"></p>
+  <button class="bigbtn" id="offlineOk">Collect</button>
+</div></div>
+
+<div class="modal" id="escapeModal"><div class="mbox">
+  <h2>YOU ESCAPED THE MILL</h2>
+  <p id="escapeText"></p>
+  <button class="bigbtn" id="ngBtn">Start New Game+ (permanent +50% earnings, tolls x3)</button>
+  <button class="bigbtn" id="stayBtn" style="background:linear-gradient(#44454f,#33343f);border-color:#888;">Keep playing this run</button>
+</div></div>
+
+<div class="modal" id="settingsModal"><div class="mbox">
+  <h2>Settings</h2>
+  <div class="setrow"><span>Sound</span><input type="checkbox" id="muteChk"></div>
+  <div class="setrow"><span>Lethal Mode (tolls x5, earnings x2, run timer) — unlocks after first escape</span><input type="checkbox" id="lethalChk"></div>
+  <div class="setrow"><span>Reset save (permanent)</span><button class="smallbtn danger" id="resetBtn">Reset</button></div>
+  <button class="bigbtn" id="settingsOk">Close</button>
+</div></div>
+
+<div id="toast"></div>
+
+<script>
+'use strict';
+/* ============ utils ============ */
+function fmt(n){
+  if(!isFinite(n)) return 'inf';
+  if(n<0) return '-'+fmt(-n);
+  if(n<1000){ var v=Math.floor(n*10)/10; return (v%1===0)? String(Math.floor(v)) : v.toFixed(1); }
+  var units=['K','M','B','T','Qa','Qi','Sx','Sp','Oc'];
+  var u=-1; while(n>=1000 && u<units.length-1){ n/=1000; u++; }
+  var s=parseFloat(n.toPrecision(3));
+  return s+' '+units[u];
+}
+function fmtTime(s){ s=Math.floor(s); var h=Math.floor(s/3600),m=Math.floor(s%3600/60),ss=s%60;
+  return (h>0? h+'h ':'')+(m>0||h>0? m+'m ':'')+ss+'s'; }
+function rand(a,b){ return a+Math.random()*(b-a); }
+function irand(a,b){ return Math.floor(rand(a,b+1)); }
+function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+function gauss(){ return (Math.random()+Math.random()+Math.random()-1.5)/1.5; }
+function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+
+/* ============ sound (WebAudio synth) ============ */
+var AC=null;
+function beep(f,dur,type,vol,slide){
+  if(S.muted) return;
+  try{
+    if(!AC) AC=new (window.AudioContext||window.webkitAudioContext)();
+    if(AC.state==='suspended') AC.resume();
+    var o=AC.createOscillator(), g=AC.createGain(), t=AC.currentTime;
+    o.type=type||'square'; o.frequency.setValueAtTime(f,t);
+    if(slide) o.frequency.exponentialRampToValueAtTime(Math.max(30,f+slide),t+dur);
+    g.gain.setValueAtTime(vol||0.05,t);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t+dur+0.02);
+  }catch(e){}
+}
+var SFX={
+  throwDart:function(){ beep(700,0.07,'square',0.04,-400); },
+  coin:function(){ beep(1250,0.06,'square',0.035,300); setTimeout(function(){beep(1650,0.09,'square',0.03,200);},45); },
+  scratch:function(){ beep(rand(300,500),0.05,'sawtooth',0.02); },
+  dice:function(){ beep(220,0.05,'square',0.04); setTimeout(function(){beep(180,0.05,'square',0.04);},70); },
+  plink:function(){ beep(rand(900,1500),0.05,'sine',0.045); },
+  cook:function(){ beep(520,0.12,'sine',0.05,240); },
+  spin:function(){ beep(300,0.3,'sawtooth',0.03,500); },
+  win:function(){ [523,659,784,1046].forEach(function(f,i){ setTimeout(function(){beep(f,0.16,'square',0.05);},i*110); }); },
+  toll:function(){ [392,523,659,880,1046,1318].forEach(function(f,i){ setTimeout(function(){beep(f,0.2,'square',0.05);},i*120); }); }
+};
+</script>
+<script>
+'use strict';
+/* ============ game data ============ */
+var ROOM_IDS=['darts','scratch','dice','sushi','wheel'];
+var ROOMS={
+  darts:{name:'Darts', title:'Room 1 — The Dart Pit', guardian:'Verminus, the Massive Rat', cur:'Gold', accent:'#e5484d', seed:0},
+  scratch:{name:'Scratch', title:'Room 2 — The Ticket Swamp', guardian:'Gargantua, the Giga Frog', cur:'Cash', accent:'#46a758', seed:30},
+  dice:{name:'Dice', title:'Room 3 — The Dice Hollow', guardian:'Kubrick, the Dice Golem', cur:'Chips', accent:'#5b8def', seed:40},
+  sushi:{name:'Sushi', title:'Room 4 — The Sushi Kitchen', guardian:'Madame Miso, Cat Sushi Chef', cur:'Bites', accent:'#f0833a', seed:30},
+  wheel:{name:'Wheel', title:'Room 5 — The Vault', guardian:'The Skeleton Foreman', cur:'Gems', accent:'#f5c542', seed:60}
+};
+/* Jackpot pool (Room 2): permanent cross-room bonuses */
+var JACKPOTS=[
+  {id:'jp_all',   name:'Golden Ticket',     desc:'+25% earnings in ALL rooms, forever.'},
+  {id:'jp_gun',   name:'Golden Dart-Gun',   desc:'Room 1 Rattling Gunner fires 3x as hard.'},
+  {id:'jp_all2',  name:'Diamond Ticket',    desc:'+50% earnings in ALL rooms, forever.'},
+  {id:'jp_dice',  name:'Loaded Fate',       desc:'Dice multiplier stacks last 50% longer.'},
+  {id:'jp_auto',  name:'Perpetual Motion',  desc:'All automation runs 25% faster.'},
+  {id:'jp_pach',  name:'Silver Pegs',       desc:'Pachinko payouts +50%.'},
+  {id:'jp_sushi', name:'Master Stock',      desc:'Sushi dish effects are 50% stronger.'},
+  {id:'jp_wheel', name:'Foreman\'s Key',    desc:'Prize Wheel payouts +40%.'}
+];
+/* Sushi dishes: pick 1 of 3 per cook; each pick stacks forever */
+var DISHES=[
+  {id:'bullsoup', name:'Bullseye Soup',    desc:'Dart bullseye radius +10%'},
+  {id:'luckymaki',name:'Lucky Maki',       desc:'Scratch jackpot chance +0.2 pts'},
+  {id:'turboroll',name:'Turbo Roll',       desc:'All automation 6% faster'},
+  {id:'patientpie',name:'Patient Pie',     desc:'Dice multiplier stacks last +25%'},
+  {id:'goldenrice',name:'Golden Rice',     desc:'All earnings +8%'},
+  {id:'sharpsashimi',name:'Sharp Sashimi', desc:'Tap-action values (throws, serves) +12%'},
+  {id:'peggravy', name:'Peg Gravy',        desc:'Pachinko payouts +20%'},
+  {id:'wheelwasabi',name:'Wheel Wasabi',   desc:'Prize Wheel payouts +15%'}
+];
+/* Symbols for scratch tickets: tier -> payout multiplier of ticket price */
+var SYMBOLS=[
+  {id:'clover', label:'Clover', mult:0.5, w:34},
+  {id:'coin',   label:'Coin',   mult:1.5, w:27},
+  {id:'gem',    label:'Gem',    mult:4,   w:19},
+  {id:'crown',  label:'Crown',  mult:12,  w:12},
+  {id:'star',   label:'Star',   mult:50,  w:8}
+];
+var WINNER_W=[40,28,18,9,5];
+var PACH_SLOTS=[10,3,1.5,0.5,25,0.5,1.5,3,10];
+var WHEEL_SEGS=[2,3,5,8,12,20,35,60];
+var WHEEL_LABELS=['2x','3x','5x','8x','12x','20x','35x','60x'];
+
+/* Upgrades: cost(lvl)=cost at current level; max; ng = min NG+ level */
+function C(base,scale){ return function(l){ return Math.ceil(base*Math.pow(scale,l)); }; }
+var UPGRADES={
+darts:[
+  {id:'weighted', name:'Weighted Darts', max:10, cost:C(15,1.9),   d:function(l){return 'Throw value x1.7 per level (now x'+Math.pow(1.7,l).toFixed(1)+')';}},
+  {id:'tips',     name:'Golden Tips', max:8, cost:C(400,2.0),      d:function(l){return 'Throw value x1.6 per level';}},
+  {id:'sharp',    name:'Sharper Points', max:8, cost:C(8000,2.1),   d:function(l){return 'Throw value x1.5 per level';}},
+  {id:'ring',     name:'Wider Bullseye', max:10, cost:C(60,1.7),    d:function(l){return 'Bullseye radius +8% per level';}},
+  {id:'steady',   name:'Steady Hand', max:8, cost:C(120,1.8),       d:function(l){return 'Dart spread -7% per level (aim truer)';}},
+  {id:'double',   name:'Double Darts', max:1, cost:C(900,1),        d:function(l){return 'Throw 2 darts at once';}},
+  {id:'triple',   name:'Triple Darts', max:1, cost:C(12000,1),      d:function(l){return 'Throw 3 darts at once';}},
+  {id:'zone',     name:'Zone Mastery', max:8, cost:C(2500,1.9),     d:function(l){return 'Ring payouts +25% per level';}},
+  {id:'crit',     name:'Crit Charm', max:5, cost:C(5000,2.0),       d:function(l){return 'Bullseye crit +2x per level (base x10)';}},
+  {id:'mousey',   name:'Mousey Helper', max:20, cost:C(50,1.6),     d:function(l){return 'A mouse nibbles loose gold: +0.5 Gold/s per level';}},
+  {id:'army',     name:'Mouse Army', max:5, cost:C(3000,2.3),       d:function(l){return 'Mousey income x2 per level';}},
+  {id:'gunner',   name:'Rattling Gunner', max:1, cost:C(3000,1),    d:function(l){return 'A rat with a dart-gun auto-hits every 2s, even in other rooms';}},
+  {id:'tuning',   name:'Gunner Tuning', max:5, cost:C(6000,2.0),    d:function(l){return 'Gunner fires 10% faster per level';}},
+  {id:'autothrow',name:'Auto Throw', max:1, cost:C(65000,1),       d:function(l){return 'Throws automatically every 16.67s, even in other rooms';}},
+  {id:'autospeed',name:'Auto Throw Speed', max:4, cost:C(90000,2.2),d:function(l){return 'Auto Throw interval /1.25 per level';}},
+  {id:'storm',    name:'Dart Storm', max:1, cost:C(250000,1), ng:1, d:function(l){return 'NG+: +3 darts per throw';}},
+  {id:'lucky',    name:'Lucky Feather', max:5, cost:C(150000,2.4), ng:1, d:function(l){return 'NG+: +50% Room 1 value per level';}}
+],
+scratch:[
+  {id:'tier',     name:'Bigger Tickets', max:6, cost:C(120,3.2),    d:function(l){return 'Ticket price x10, prizes scale x13 per tier (now $'+fmt(6*Math.pow(10,l))+')';}},
+  {id:'cells9',   name:'Deluxe Grid', max:1, cost:C(500,1),          d:function(l){return 'Tickets have 9 cells instead of 6';}},
+  {id:'odds',     name:'Loaded Lottery', max:8, cost:C(200,1.9),    d:function(l){return 'Winning tickets are much more common';}},
+  {id:'paytable', name:'Fatter Prizes', max:8, cost:C(350,2.0),     d:function(l){return 'All scratch prizes +30% per level';}},
+  {id:'foil',     name:'Golden Foil', max:5, cost:C(1500,2.1),       d:function(l){return 'Jackpot chance +0.15 pts per level';}},
+  {id:'pairpay',  name:'Pair Consolation', max:3, cost:C(800,2.2),  d:function(l){return 'Even a pair pays 20% of its tier prize per level';}},
+  {id:'toad',     name:'Toad Accountant', max:1, cost:C(2500,1),    d:function(l){return 'Pays out a fat dividend every 30s, even in other rooms';}},
+  {id:'toadup',   name:'Toad Raises', max:6, cost:C(4000,2.0),      d:function(l){return 'Toad dividend x1.8 per level';}},
+  {id:'abacus',   name:'Abacus Frog', max:1, cost:C(6000,1),        d:function(l){return 'Tickets grant EXP; each ticket level = +10% prizes';}},
+  {id:'abacusup', name:'Abacus Tutoring', max:6, cost:C(9000,2.0),  d:function(l){return '+1 EXP per ticket per level';}},
+  {id:'autoscratch',name:'Auto Scratch', max:1, cost:C(20000,1),    d:function(l){return 'Buys and scratches a ticket every 8s, even in other rooms';}},
+  {id:'autofast', name:'Auto Scratch Speed', max:4, cost:C(30000,2.2),d:function(l){return 'Auto Scratch interval /1.3 per level';}},
+  {id:'glove',    name:'Scratch Gloves', max:1, cost:C(1000,1),      d:function(l){return 'Unlocks the Reveal All button';}},
+  {id:'charm',    name:'Lucky Charm', max:4, cost:C(12000,2.1),     d:function(l){return 'All scratch prizes +25% per level';}},
+  {id:'vaultkey', name:'Vault Dividends', max:3, cost:C(80000,2.5), ng:1, d:function(l){return 'NG+: jackpot permanent bonuses are 50% stronger per level';}},
+  {id:'bigspender',name:'Whale Tickets', max:4, cost:C(150000,2.4), ng:1, d:function(l){return 'NG+: ticket prizes x1.8 per level';}}
+],
+dice:[
+  {id:'moredice', name:'More Dice', max:3, cost:C(150,4.0),         d:function(l){return 'Roll '+(2+l)+' dice (now '+(2+l)+')';}},
+  {id:'sides',    name:'Bigger Dice', max:3, cost:C(600,3.5),       d:function(l){return 'Dice become d'+[6,8,12,20][l];}},
+  {id:'pips',     name:'Golden Pips', max:10, cost:C(60,2.0),       d:function(l){return 'Chips per pip x2.2 per level';}},
+  {id:'loaded',   name:'Loaded Dice', max:3, cost:C(900,2.6),       d:function(l){return 'Each die rerolls a low face, keeping the better one';}},
+  {id:'duration', name:'Slow Decay', max:6, cost:C(700,1.9),        d:function(l){return 'Multiplier stacks last +25% per level';}},
+  {id:'strength', name:'Strong Stacks', max:6, cost:C(1100,2.0),    d:function(l){return 'Multiplier stacks are +15% stronger per level';}},
+  {id:'perman',   name:'Fate Etching', max:5, cost:C(5000,2.2),     d:function(l){return 'All-same rolls also etch +2% permanent global earnings';}},
+  {id:'balltier', name:'Heavier Balls', max:6, cost:C(100,2.4),     d:function(l){return 'Pachinko ball cost & payouts x2.2 per tier';}},
+  {id:'slotup',   name:'Polished Slots', max:6, cost:C(450,2.0),    d:function(l){return 'Pachinko slot payouts +20% per level';}},
+  {id:'multiball',name:'Multi-Ball', max:2, cost:C(3000,3.0),       d:function(l){return 'Drop '+(1+l)+' pachinko balls per drop';}},
+  {id:'autodrop', name:'Auto Drop', max:1, cost:C(15000,1),         d:function(l){return 'Drops pachinko balls every 5s, even in other rooms';}},
+  {id:'dropfast', name:'Auto Drop Speed', max:4, cost:C(22000,2.2), d:function(l){return 'Auto Drop interval /1.3 per level';}},
+  {id:'hustle',   name:'Chip Hustle', max:8, cost:C(90,1.9),        d:function(l){return 'Side Hustle pays x2 per level';}},
+  {id:'pipstorm', name:'Pip Storm', max:4, cost:C(60000,2.3), ng:1, d:function(l){return 'NG+: chips per pip x2 per level';}},
+  {id:'combomaster',name:'Combo Master', max:1, cost:C(100000,1), ng:1, d:function(l){return 'NG+: near-straights (one die off) also count as straights';}},
+  {id:'golemheart',name:'Golem Heart', max:3, cost:C(200000,2.5), ng:1, d:function(l){return 'NG+: +40% Room 3 earnings per level';}}
+],
+sushi:[
+  {id:'knives',   name:'Sharper Knives', max:10, cost:C(15,1.9),    d:function(l){return 'Serve value x1.8 per level';}},
+  {id:'rice',     name:'Golden Rice Stock', max:8, cost:C(300,2.0), d:function(l){return 'Serve value x1.7 per level';}},
+  {id:'serve2',   name:'Two Hands', max:1, cost:C(700,1),           d:function(l){return 'Serve twice per tap';}},
+  {id:'plating',  name:'Fine Plating', max:6, cost:C(1200,1.9),     d:function(l){return 'Serve value +40% per level';}},
+  {id:'sous',     name:'Sous-Chef Cats', max:15, cost:C(60,1.65),   d:function(l){return '+1.2 Bites/s per cat';}},
+  {id:'brigade',  name:'Cat Brigade', max:5, cost:C(2500,2.3),      d:function(l){return 'Sous-chef income x2 per level';}},
+  {id:'stoves',   name:'Faster Stoves', max:6, cost:C(900,1.9),     d:function(l){return 'Cook time -8% per level';}},
+  {id:'mastery',  name:'Dish Mastery', max:6, cost:C(3500,2.0),     d:function(l){return 'Dish effects +25% stronger per level';}},
+  {id:'discount', name:'Wholesale Fish', max:5, cost:C(1800,2.0),  d:function(l){return 'Cook cost -10% per level';}},
+  {id:'autocook', name:'Auto Cook', max:1, cost:C(25000,1),         d:function(l){return 'Kitchen starts cooks automatically and picks a random dish';}},
+  {id:'reroll',   name:'Menu Reroll', max:1, cost:C(5000,1),        d:function(l){return 'Reroll the 3 dish choices once per cook';}},
+  {id:'hustle',   name:'Tip Jar', max:8, cost:C(120,1.9),           d:function(l){return 'Side Hustle pays x2 per level';}},
+  {id:'feastfire',name:'Feast Fire', max:4, cost:C(70000,2.3), ng:1,d:function(l){return 'NG+: dish effects +40% per level';}},
+  {id:'teppan',   name:'Teppan Masters', max:4, cost:C(120000,2.4), ng:1, d:function(l){return 'NG+: serve value x1.9 per level';}}
+],
+wheel:[
+  {id:'bettier',  name:'Bigger Bets', max:5, cost:C(200,3.4),       d:function(l){return 'Spin bet x8 per tier (now '+fmt(25*Math.pow(8,l))+' Gems)';}},
+  {id:'segup',    name:'Gilded Segments', max:8, cost:C(300,2.0),   d:function(l){return 'Wheel payouts +30% per level';}},
+  {id:'luckseg',  name:'Weighted Rim', max:4, cost:C(1500,2.1),     d:function(l){return 'Big segments (20x+) come up far more often';}},
+  {id:'multispin',name:'Triple Spin', max:1, cost:C(8000,1),        d:function(l){return 'Every spin is 3 spins (3 bets, 3 payouts)';}},
+  {id:'autospin', name:'Auto Spin', max:1, cost:C(40000,1),         d:function(l){return 'Spins the wheel every 6s, even in other rooms';}},
+  {id:'spinfast', name:'Auto Spin Speed', max:4, cost:C(50000,2.2), d:function(l){return 'Auto Spin interval /1.3 per level';}},
+  {id:'bane',     name:'Foreman Bane', max:5, cost:C(6000,2.1),     d:function(l){return 'Wheel damage to the Foreman +30% per level (payouts unchanged)';}},
+  {id:'greased',  name:'Greased Axle', max:3, cost:C(2500,2.0),     d:function(l){return 'Manual spin cooldown shrinks; wheel spins snappier';}},
+  {id:'hustle',   name:'Gem Hustle', max:8, cost:C(150,1.9),        d:function(l){return 'Side Hustle pays x2 per level';}},
+  {id:'vaultkeys',name:'Vault Keys', max:3, cost:C(90000,2.4), ng:1,d:function(l){return 'NG+: wheel payouts x1.7 per level';}},
+  {id:'crownseg', name:'Crown Segment', max:1, cost:C(300000,1), ng:1, d:function(l){return 'NG+: the 2x segment becomes a 1000x CROWN segment';}}
+]};
+</script>
+<script>
+'use strict';
+/* ============ state ============ */
+var SAVE_KEY='fortuneMillSaveV1';
+function defaultState(){
+  return {
+    v:1, curRoom:0, unlocked:1,
+    wallets:{darts:0,scratch:0,dice:0,sushi:0,wheel:0},
+    lifetime:{darts:0,scratch:0,dice:0,sushi:0,wheel:0},
+    tollPaid:{darts:false,scratch:false,dice:false,sushi:false,wheel:false},
+    up:{darts:{},scratch:{},dice:{},sushi:{},wheel:{}},
+    jackpots:[], diceStacks:[], dishCounts:{}, permDice:0,
+    ticketXp:0, cooks:0, foremanHP:null,
+    cook:{busy:false,readyAt:0,choices:null,rerolled:false},
+    ng:0, lethal:false, firstClear:false, escaped:false, escapedSeen:false,
+    muted:false, buyMax:false,
+    acc:{gunner:0,autothrow:0,toad:0,autoscratch:0,autodrop:0,autospin:0},
+    runStart:Date.now(), playStart:Date.now(), lastSeen:Date.now(),
+    counters:{throws:0,tickets:0,rolls:0,drops:0,serves:0,spins:0}
+  };
+}
+var S=defaultState();
+function save(){
+  S.lastSeen=Date.now();
+  try{ localStorage.setItem(SAVE_KEY, JSON.stringify(S)); }catch(e){}
+}
+function load(){
+  try{
+    var raw=localStorage.getItem(SAVE_KEY);
+    if(!raw) return false;
+    var d=JSON.parse(raw); if(!d||d.v!==1) return false;
+    var base=defaultState();
+    for(var k in base){ if(d[k]!==undefined) base[k]=d[k]; }
+    S=base; return true;
+  }catch(e){ return false; }
+}
+function lvl(room,id){ return S.up[room][id]||0; }
+function hasJp(id){ return S.jackpots.indexOf(id)>=0; }
+function tollFor(roomIdx){
+  var base=1000000*Math.pow(3,S.ng);
+  if(S.lethal) base*=5;
+  return base;
+}
+function jpBoost(){ return 1+0.5*lvl('scratch','vaultkey'); }
+/* ============ derived stats ============ */
+function diceMult(now){
+  var m=1;
+  S.diceStacks=S.diceStacks.filter(function(st){ return st.exp>now; });
+  S.diceStacks.forEach(function(st){ m*=st.m; });
+  return m;
+}
+function dishStr(){
+  var m=1+0.25*lvl('sushi','mastery');
+  if(hasJp('jp_sushi')) m*=1.5;
+  if(S.ng>=1) m*=1+0.4*lvl('sushi','feastfire');
+  return m;
+}
+function dishCount(id){ return S.dishCounts[id]||0; }
+function autoSpeed(){
+  var m=hasJp('jp_auto')?1.25:1;
+  m*=Math.pow(1+0.06*dishStr(), dishCount('turboroll'));
+  return m;
+}
+function globalMult(now){
+  var m=(1+0.5*S.ng)*(S.lethal?2:1);
+  if(hasJp('jp_all')) m*=1+0.25*jpBoost();
+  if(hasJp('jp_all2')) m*=1+0.5*jpBoost();
+  m*= 1+0.02*S.permDice;
+  m*= Math.pow(1+0.08*dishStr(), dishCount('goldenrice'));
+  m*= diceMult(now);
+  return m;
+}
+function calcDarts(){
+  var value=1*Math.pow(1.7,lvl('darts','weighted'))*Math.pow(1.6,lvl('darts','tips'))*Math.pow(1.5,lvl('darts','sharp'));
+  value*= 1+0.12*dishStr()*dishCount('sharpsashimi');
+  if(S.ng>=1) value*= 1+0.5*lvl('darts','lucky');
+  var perThrow=1+(lvl('darts','double')?1:0)+(lvl('darts','triple')?1:0)+(S.ng>=1&&lvl('darts','storm')?3:0);
+  var bullR=10*(1+0.08*lvl('darts','ring'))*(1+0.10*dishStr()*dishCount('bullsoup'));
+  var spread=30*Math.pow(0.93,lvl('darts','steady'));
+  var crit=10+2*lvl('darts','crit');
+  var zoneB=1+0.25*lvl('darts','zone');
+  var mousey=0.5*lvl('darts','mousey')*Math.pow(2,lvl('darts','army'));
+  var gunnerInt=2.0*Math.pow(0.9,lvl('darts','tuning'));
+  var gunnerHit=value*1.5*(hasJp('jp_gun')?3:1);
+  var atInt=16.67/Math.pow(1.25,lvl('darts','autospeed'));
+  return {value:value,perThrow:perThrow,bullR:bullR,spread:spread,crit:crit,zoneB:zoneB,
+    mousey:mousey,gunnerInt:gunnerInt,gunnerHit:gunnerHit,atInt:atInt,avgZone:1.5};
+}
+function ticketPrice(){ return 6*Math.pow(10,lvl('scratch','tier')); }
+function ticketPayScale(){ return Math.pow(13,lvl('scratch','tier'))/1; }
+function calcScratch(){
+  var price=ticketPrice();
+  var payMult=(1+0.3*lvl('scratch','paytable'))*(1+0.25*lvl('scratch','charm'));
+  payMult*= 1+0.1*ticketLevel();
+  if(S.ng>=1) payMult*=Math.pow(1.8,lvl('scratch','bigspender'));
+  var jpChance=0.004+0.0015*lvl('scratch','foil')+0.002*dishStr()*dishCount('luckymaki');
+  var winP=0.35+0.03*lvl('scratch','odds');
+  var toadPay=price*2.2*(payMult)*Math.pow(1.8,lvl('scratch','toadup'));
+  var asInt=8/Math.pow(1.3,lvl('scratch','autofast'));
+  return {price:price,payMult:payMult,jpChance:Math.min(0.05,jpChance),winP:Math.min(0.85,winP),
+    cells:lvl('scratch','cells9')?9:6,toadPay:toadPay,asInt:asInt,priceScale:Math.pow(1.3,lvl('scratch','tier'))};
+}
+function ticketLevel(){ return Math.floor(Math.sqrt(S.ticketXp/5)); }
+function calcDice(now){
+  var n=2+lvl('dice','moredice');
+  var sides=[6,8,12,20][lvl('dice','sides')];
+  var pipV=0.5*Math.pow(2.2,lvl('dice','pips'));
+  if(S.ng>=1) pipV*=Math.pow(2,lvl('dice','pipstorm'));
+  var durB=(1+0.25*lvl('dice','duration'))*(hasJp('jp_dice')?1+0.5*jpBoost():1)*(1+0.25*dishStr()*dishCount('patientpie'));
+  var strB=1+0.15*lvl('dice','strength');
+  var ballCost=10*Math.pow(2.2,lvl('dice','balltier'));
+  var ballPay=ballCost*(1+0.2*lvl('dice','slotup'))*(hasJp('jp_pach')?1.5:1)*Math.pow(1+0.2*dishStr(),dishCount('peggravy'));
+  var balls=1+lvl('dice','multiball');
+  var adInt=5/Math.pow(1.3,lvl('dice','dropfast'));
+  var hustle=2*Math.pow(2,lvl('dice','hustle'));
+  return {n:n,sides:sides,pipV:pipV,durB:durB,strB:strB,ballCost:ballCost,ballPay:ballPay,
+    balls:balls,adInt:adInt,hustle:hustle,roomB:S.ng>=1?1+0.4*lvl('dice','golemheart'):1};
+}
+function cookCost(){
+  var base=40*Math.pow(1.55,S.cooks);
+  return Math.ceil(base*Math.pow(0.9,lvl('sushi','discount')));
+}
+function calcSushi(){
+  var serve=1*Math.pow(1.8,lvl('sushi','knives'))*Math.pow(1.7,lvl('sushi','rice'))*(1+0.4*lvl('sushi','plating'));
+  serve*= 1+0.12*dishStr()*dishCount('sharpsashimi');
+  if(S.ng>=1) serve*=Math.pow(1.9,lvl('sushi','teppan'));
+  var serves=lvl('sushi','serve2')?2:1;
+  var sous=1.2*lvl('sushi','sous')*Math.pow(2,lvl('sushi','brigade'));
+  var time=Math.max(4, 20*Math.pow(0.92,lvl('sushi','stoves')));
+  var hustle=2*Math.pow(2,lvl('sushi','hustle'));
+  return {serve:serve,serves:serves,sous:sous,cookTime:time,cookCost:cookCost(),hustle:hustle};
+}
+function wheelSegments(){
+  var segs=WHEEL_SEGS.slice();
+  if(S.ng>=1 && lvl('wheel','crownseg')) segs[0]=1000;
+  return segs;
+}
+function calcWheel(){
+  var bet=25*Math.pow(8,lvl('wheel','bettier'));
+  var payB=(1+0.3*lvl('wheel','segup'))*(hasJp('jp_wheel')?1+0.4*jpBoost():1)*Math.pow(1+0.15*dishStr(),dishCount('wheelwasabi'));
+  if(S.ng>=1) payB*=Math.pow(1.7,lvl('wheel','vaultkeys'));
+  var spins=lvl('wheel','multispin')?3:1;
+  var asInt=6/Math.pow(1.3,lvl('wheel','spinfast'));
+  var dmgB=1+0.3*lvl('wheel','bane');
+  var hustle=2*Math.pow(2,lvl('wheel','hustle'));
+  return {bet:bet,payB:payB,spins:spins,asInt:asInt,dmgB:dmgB,hustle:hustle,segs:wheelSegments()};
+}
+/* Expected value of one pachinko ball (in chips, before global mult) */
+function pachEV(){ var c=calcDice(Date.now()); var avg=0; PACH_SLOTS.forEach(function(s){avg+=s;}); avg/=PACH_SLOTS.length; return c.ballPay*avg*0.32; }
+/* offline / passive rate per second per room (automation only, before global mult) */
+function passiveRates(now){
+  var d=calcDarts(), sc=calcScratch(), di=calcDice(Date.now()), su=calcSushi(), wh=calcWheel();
+  var r={darts:0,scratch:0,dice:0,sushi:0,wheel:0};
+  r.darts+=d.mousey;
+  if(lvl('darts','gunner')) r.darts+=d.gunnerHit/d.gunnerInt;
+  if(lvl('darts','autothrow')) r.darts+=d.value*d.perThrow*d.avgZone/d.atInt;
+  if(lvl('scratch','toad')) r.scratch+=sc.toadPay/30;
+  if(lvl('scratch','autoscratch')) r.scratch+=scratchEV()/sc.asInt;
+  if(lvl('dice','autodrop')) r.dice+=pachEV()*di.balls/di.adInt;
+  r.sushi+=su.sous;
+  if(lvl('wheel','autospin')){ var ev=0; wh.segs.forEach(function(s){ev+=s;}); ev/=wh.segs.length; r.wheel+=wh.bet*ev*wh.payB*0.55/wh.asInt; }
+  var as=autoSpeed();
+  r.darts*=as; r.scratch*=as; r.dice*=as; r.wheel*=as;
+  return r;
+}
+function scratchEV(){
+  /* expected gross payout of one ticket, matching resolveTicket math */
+  var sc=calcScratch();
+  var em=0; SYMBOLS.forEach(function(sy,i){ em+=(WINNER_W[i]/100)*sy.mult; });
+  return sc.price*sc.winP*em*sc.payMult*sc.priceScale;
+}
+</script>
+<script>
+'use strict';
+/* ============ core gain / toll engine ============ */
+function gain(room, amount, now){
+  if(amount<=0) return 0;
+  var g=amount*globalMult(now||Date.now());
+  if(room==='dice') g*=calcDice(now||Date.now()).roomB;
+  S.wallets[room]+=g;
+  S.lifetime[room]+=g;
+  checkToll(room);
+  return g;
+}
+function roomIndex(id){ return ROOM_IDS.indexOf(id); }
+function checkToll(room){
+  var idx=roomIndex(room);
+  if(S.tollPaid[room]) return;
+  if(room==='wheel'){ return; } /* wheel toll is the Foreman HP bar */
+  if(S.lifetime[room]>=tollFor(idx)){
+    S.tollPaid[room]=true;
+    SFX.toll();
+    unlockNext(idx);
+    showScene(ROOMS[room].guardian.split(',')[0]+' Pays Up',
+      'The lifetime toll of '+fmt(tollFor(idx))+' '+ROOMS[room].cur+' is paid in full. '+
+      ROOMS[room].guardian+' counts it twice, grumbles, and hauls the gate open. '+
+      (idx+1<5 ? 'The next room awaits.' : ''));
+  }
+}
+function unlockNext(idx){
+  if(idx+1<5){
+    var nid=ROOM_IDS[idx+1];
+    if(S.unlocked<idx+2){
+      S.unlocked=idx+2;
+      if(S.wallets[nid]===0) S.wallets[nid]=ROOMS[nid].seed;
+      if(nid==='wheel' && S.foremanHP===null) S.foremanHP=tollFor(4);
+    }
+  }
+}
+function damageForeman(amount){
+  if(S.foremanHP===null) S.foremanHP=tollFor(4);
+  if(S.escaped) return;
+  S.foremanHP-=amount;
+  if(S.foremanHP<=0){
+    S.foremanHP=0; S.tollPaid.wheel=true; S.escaped=true; S.firstClear=true;
+    SFX.toll();
+    document.getElementById('escapeText').textContent=
+      'The Skeleton Foreman\'s health bar shatters. He tips his hard hat, steps aside, and you walk out of the Fortune Mill into daylight. '+
+      'New Game+ is unlocked: restart with a permanent +50% earnings per NG+ level, guardian tolls x3 per level, and exclusive upgrades in every shop. Lethal Mode is now available in Settings.';
+    showModal('escapeModal');
+  }
+}
+/* ============ ROOM 1: darts ============ */
+function zoneFactor(dist,st){
+  if(dist<=st.bullR) return {f:st.crit, label:'BULLSEYE x'+st.crit, crit:true};
+  if(dist<=30) return {f:3*st.zoneB, label:'Inner ring x'+(3*st.zoneB).toFixed(1)};
+  if(dist<=60) return {f:2*st.zoneB, label:'Mid ring x'+(2*st.zoneB).toFixed(1)};
+  if(dist<=100) return {f:1*st.zoneB, label:'Outer ring'};
+  return {f:0.1, label:'Off the board'};
+}
+var dartMarks=[]; /* {x,y,t} in board coords -100..100 */
+function throwDartAt(tx,ty,now){
+  var st=calcDarts();
+  var total=0, crits=0, best=null;
+  for(var i=0;i<st.perThrow;i++){
+    var x=tx+gauss()*st.spread, y=ty+gauss()*st.spread;
+    var dist=Math.sqrt(x*x+y*y);
+    var z=zoneFactor(dist,st);
+    total+=st.value*z.f;
+    if(z.crit) crits++;
+    if(!best||z.f>best.f) best=z;
+    dartMarks.push({x:x,y:y,t:Date.now()});
+  }
+  if(dartMarks.length>24) dartMarks=dartMarks.slice(-24);
+  var g=gain('darts',total,now);
+  S.counters.throws++;
+  SFX.throwDart(); if(crits>0) SFX.win(); else SFX.coin();
+  return {gained:g, label:best.label, crit:crits>0};
+}
+function autoThrowOnce(now){
+  var st=calcDarts();
+  return gain('darts', st.value*st.perThrow*st.avgZone, now);
+}
+function gunnerOnce(now){
+  var st=calcDarts();
+  return gain('darts', st.gunnerHit, now);
+}
+/* ============ ROOM 2: scratch ============ */
+var curTicket=null; /* {cells:[{sym,jack}], revealed:n, resolved:bool, price} */
+function buyTicket(manual){
+  var sc=calcScratch();
+  if(S.wallets.scratch<sc.price) return null;
+  S.wallets.scratch-=sc.price;
+  var cells=[];
+  var winSym=null;
+  if(Math.random()<sc.winP){
+    var r=rand(0,100), acc2=0;
+    for(var wi=0;wi<SYMBOLS.length;wi++){ acc2+=WINNER_W[wi]; if(r<=acc2){ winSym=SYMBOLS[wi]; break; } }
+    if(!winSym) winSym=SYMBOLS[0];
+  }
+  var n=sc.cells;
+  var placed=0;
+  var idxs=[]; for(var i=0;i<n;i++) idxs.push(i);
+  idxs.sort(function(){return Math.random()-0.5;});
+  var cellArr=new Array(n).fill(null);
+  if(winSym){ var cnt=irand(3,Math.min(5,n)); for(var j=0;j<cnt;j++){ cellArr[idxs[placed++]]=winSym; } }
+  var fillerCount={};
+  for(var k=0;k<n;k++){
+    if(!cellArr[k]){
+      var sy=null, tries=0;
+      do{
+        var r=rand(0,100), acc=0; sy=SYMBOLS[0];
+        for(var q=0;q<SYMBOLS.length;q++){ acc+=SYMBOLS[q].w; if(r<=acc){ sy=SYMBOLS[q]; break; } }
+        tries++;
+      } while(tries<12 && sy!==winSym && (fillerCount[sy.id]||0)>=2);
+      if(sy!==winSym) fillerCount[sy.id]=(fillerCount[sy.id]||0)+1;
+      cellArr[k]=sy;
+    }
+  }
+  /* avoid accidental extra 3-of-a-kind of a different symbol when not a winner */
+  cells=cellArr.map(function(sy){ return {sym:sy, jack:false, open:false}; });
+  /* jackpot cell */
+  if(Math.random()<sc.jpChance){
+    var spot=irand(0,n-1);
+    cells[spot]={sym:null, jack:true, open:false};
+  }
+  curTicket={cells:cells, revealed:0, resolved:false, price:sc.price};
+  S.counters.tickets++;
+  return curTicket;
+}
+function revealCell(i){
+  if(!curTicket||curTicket.resolved) return;
+  var c=curTicket.cells[i];
+  if(c.open) return;
+  c.open=true; curTicket.revealed++; SFX.scratch();
+  if(curTicket.revealed>=curTicket.cells.length) resolveTicket();
+}
+function resolveTicket(){
+  if(!curTicket||curTicket.resolved) return;
+  curTicket.resolved=true;
+  var sc=calcScratch();
+  var now=Date.now();
+  var counts={};
+  curTicket.cells.forEach(function(c){ if(c.sym) counts[c.sym.id]=(counts[c.sym.id]||0)+1; });
+  var best=null;
+  SYMBOLS.forEach(function(sy){ if((counts[sy.id]||0)>=3 && (!best||sy.mult>best.mult)) best=sy; });
+  var payout=0, note='';
+  if(best){
+    payout=curTicket.price*best.mult*sc.payMult*sc.priceScale;
+    note='3x '+best.label+'! Pays '+fmt(payout*globalMult(now))+' Cash';
+  } else {
+    /* pair consolation */
+    var pairMult=0;
+    SYMBOLS.forEach(function(sy){ if((counts[sy.id]||0)===2) pairMult=Math.max(pairMult,sy.mult); });
+    if(pairMult>0 && lvl('scratch','pairpay')>0){
+      payout=curTicket.price*pairMult*0.2*lvl('scratch','pairpay')*sc.payMult*sc.priceScale;
+      note='Pair consolation: '+fmt(payout*globalMult(now))+' Cash';
+    } else note='No match. The frog croaks, unimpressed.';
+  }
+  if(payout>0){ gain('scratch',payout,now); SFX.coin(); }
+  /* jackpot */
+  var hasJack=curTicket.cells.some(function(c){return c.jack;});
+  if(hasJack) grantJackpot();
+  if(lvl('scratch','abacus')) S.ticketXp+=1+lvl('scratch','abacusup');
+  curTicket.note=note;
+  curTicket.bestId=best?best.id:null;
+}
+function grantJackpot(){
+  var remaining=JACKPOTS.filter(function(j){ return !hasJp(j.id); });
+  if(remaining.length===0){
+    var lump=ticketPrice()*50;
+    gain('scratch',lump,Date.now());
+    toast('JACKPOT! No new relic left — the frog pays '+fmt(lump*globalMult(Date.now()))+' Cash instead.');
+    return;
+  }
+  var j=pick(remaining);
+  S.jackpots.push(j.id);
+  SFX.win();
+  toast('JACKPOT — '+j.name+': '+j.desc);
+}
+/* ============ ROOM 3: dice + pachinko ============ */
+var lastRoll=[];
+function rollDie(sides){
+  var v=irand(1,sides);
+  if(lvl('dice','loaded')>0){
+    for(var i=0;i<lvl('dice','loaded');i++){
+      if(v<=Math.ceil(sides/3)){ var v2=irand(1,sides); if(v2>v) v=v2; }
+    }
+  }
+  return v;
+}
+function rollDice(now){
+  var c=calcDice(now);
+  var vals=[]; for(var i=0;i<c.n;i++) vals.push(rollDie(c.sides));
+  lastRoll=vals;
+  var sum=vals.reduce(function(a,b){return a+b;},0);
+  var g=gain('dice', sum*c.pipV, now);
+  S.counters.rolls++;
+  /* combos */
+  var sorted=vals.slice().sort(function(a,b){return a-b;});
+  var allSame=vals.every(function(v){return v===vals[0];});
+  var isStraight=sorted.every(function(v,i){ return i===0||v===sorted[i-1]+1; });
+  var nearStraight=false;
+  if(!isStraight && lvl('dice','combomaster')){
+    for(var skip=0;skip<sorted.length;skip++){
+      var sub=sorted.filter(function(_,i){return i!==skip;});
+      if(sub.every(function(v,i){ return i===0||v===sub[i-1]+1; })) nearStraight=true;
+    }
+  }
+  var pairs={}; vals.forEach(function(v){ pairs[v]=(pairs[v]||0)+1; });
+  var hasPair=Object.keys(pairs).some(function(k){return pairs[k]>=2;});
+  var combo=null;
+  function addStack(mult,durSec,label){
+    S.diceStacks.push({m:1+(mult-1)*c.strB, exp:now+durSec*1000*c.durB, label:label});
+    if(S.diceStacks.length>40) S.diceStacks.shift();
+  }
+  if(allSame){ addStack(2.0,120,'ALL SAME x2'); combo='ALL SAME! Global x2 for '+(120*c.durB).toFixed(0)+'s';
+    if(lvl('dice','perman')>0) S.permDice+=lvl('dice','perman'); }
+  else if(isStraight||nearStraight){ addStack(1.5,90,'STRAIGHT x1.5'); combo=(nearStraight?'NEAR-':'')+'STRAIGHT! Global x1.5'; }
+  else if(sum>=c.n*c.sides*0.8){ addStack(1.35,45,'HOT ROLL x1.35'); combo='HOT ROLL! Global x1.35'; }
+  else if(hasPair){ addStack(1.25,60,'PAIR x1.25'); combo='PAIR! Global x1.25 for '+(60*c.durB).toFixed(0)+'s'; }
+  SFX.dice(); if(combo) SFX.coin();
+  return {vals:vals,sum:sum,gained:g,combo:combo};
+}
+function pachinkoDrop(now,animate){
+  var c=calcDice(now);
+  if(S.wallets.dice<c.ballCost*c.balls) return null;
+  S.wallets.dice-=c.ballCost*c.balls;
+  var results=[];
+  for(var i=0;i<c.balls;i++){
+    /* weighted slot: center-ish & edges via two dice-ish draws */
+    var pos=clamp(Math.round((Math.random()+Math.random())/2*(PACH_SLOTS.length-1)+rand(-0.4,0.4)),0,PACH_SLOTS.length-1);
+    var mult=PACH_SLOTS[pos];
+    var pay=c.ballPay*mult*0.32;
+    results.push({slot:pos,mult:mult,pay:pay});
+    gain('dice',pay,now);
+  }
+  S.counters.drops++;
+  SFX.plink();
+  return results;
+}
+/* ============ ROOM 4: sushi ============ */
+function serveTap(now){
+  var c=calcSushi();
+  var g=gain('sushi', c.serve*c.serves, now);
+  S.counters.serves++;
+  SFX.coin();
+  return g;
+}
+function startCook(){
+  var c=calcSushi();
+  if(S.cook.busy||S.wallets.sushi<c.cookCost) return false;
+  S.wallets.sushi-=c.cookCost;
+  S.cook.busy=true; S.cook.readyAt=Date.now()+c.cookTime*1000/autoSpeed();
+  S.cook.choices=null; S.cook.rerolled=false;
+  SFX.cook();
+  return true;
+}
+function rollDishChoices(){
+  var pool=DISHES.slice(), out=[];
+  for(var i=0;i<3;i++){ var j=Math.floor(Math.random()*pool.length); out.push(pool.splice(j,1)[0]); }
+  return out;
+}
+function chooseDish(id){
+  S.dishCounts[id]=(S.dishCounts[id]||0)+1;
+  S.cooks++;
+  S.cook.busy=false; S.cook.choices=null;
+  var d=DISHES.filter(function(x){return x.id===id;})[0];
+  toast('Dish learned: '+d.name+' — '+d.desc+' (stacked x'+S.dishCounts[id]+')');
+  SFX.win();
+}
+/* ============ ROOM 5: wheel ============ */
+var wheelBusy=false;
+function pickWheelSeg(){
+  var segs=calcWheel().segs;
+  /* weighted: small segments more likely; luckseg shifts weight to big ones */
+  var lw=lvl('wheel','luckseg');
+  var weights=segs.map(function(s,i){ var base=9-i; if(s>=20) base+=lw*3; return Math.max(1,base); });
+  var tot=weights.reduce(function(a,b){return a+b;},0), r=rand(0,tot);
+  for(var i=0;i<segs.length;i++){ r-=weights[i]; if(r<=0) return i; }
+  return 0;
+}
+function spinWheel(now,auto){
+  var c=calcWheel();
+  if(S.wallets.wheel<c.bet*c.spins) return null;
+  S.wallets.wheel-=c.bet*c.spins;
+  var out=[];
+  for(var i=0;i<c.spins;i++){
+    var idx=pickWheelSeg();
+    var pay=c.bet*c.segs[idx]*c.payB;
+    out.push({idx:idx,seg:c.segs[idx],pay:pay});
+    gain('wheel',pay,now);
+    damageForeman(pay*c.dmgB);
+  }
+  S.counters.spins++;
+  return out;
+}
+/* ============ side hustle (anti soft-lock) ============ */
+function hustle(room){
+  var amt=2, now=Date.now();
+  if(room==='dice') amt=calcDice(now).hustle;
+  if(room==='sushi') amt=calcSushi().hustle;
+  if(room==='wheel') amt=calcWheel().hustle;
+  return gain(room,amt,now);
+}
+/* ============ automation tick (timestamp based) ============ */
+function automationTick(now,dt){
+  var as=autoSpeed();
+  var d=calcDarts(), sc=calcScratch(), di=calcDice(now), su=calcSushi(), wh=calcWheel();
+  /* continuous passive */
+  if(d.mousey>0) gain('darts', d.mousey*dt, now);
+  if(su.sous>0) gain('sushi', su.sous*dt, now);
+  /* discrete accumulators */
+  if(lvl('darts','gunner')){ S.acc.gunner+=dt*as; var gi=d.gunnerInt; while(S.acc.gunner>=gi){ S.acc.gunner-=gi; gunnerOnce(now); } }
+  if(lvl('darts','autothrow')){ S.acc.autothrow+=dt*as; var ai=d.atInt; while(S.acc.autothrow>=ai){ S.acc.autothrow-=ai; autoThrowOnce(now); } }
+  if(lvl('scratch','toad')){ S.acc.toad+=dt*as; while(S.acc.toad>=30){ S.acc.toad-=30; gain('scratch', sc.toadPay, now); } }
+  if(lvl('scratch','autoscratch') && !curTicket){ S.acc.autoscratch+=dt*as; var si=sc.asInt;
+    if(S.acc.autoscratch>=si){ S.acc.autoscratch=0;
+      if(S.wallets.scratch>=sc.price){ var t=buyTicket(false); if(t){ t.cells.forEach(function(c){c.open=true;}); curTicket.revealed=t.cells.length; resolveTicket(); if(S.curRoom!==1) curTicket=null; } }
+    } }
+  if(lvl('dice','autodrop')){ S.acc.autodrop+=dt*as; var di2=di.adInt; if(S.acc.autodrop>=di2){ S.acc.autodrop=0; pachinkoDrop(now,false); } }
+  if(lvl('wheel','autospin') && !wheelBusy){ S.acc.autospin+=dt*as; if(S.acc.autospin>=wh.asInt){ S.acc.autospin=0; spinWheel(now,true); } }
+  /* sushi auto cook */
+  if(S.cook.busy && now>=S.cook.readyAt && !S.cook.choices){
+    S.cook.choices=rollDishChoices();
+    if(lvl('sushi','autocook')){ chooseDish(pick(S.cook.choices).id); }
+  }
+  if(lvl('sushi','autocook') && !S.cook.busy){ startCook(); }
+}
+/* ============ NG+ ============ */
+function doNGPlus(){
+  var keep={ng:S.ng+1, firstClear:true, muted:S.muted, buyMax:S.buyMax, lethal:S.lethal, playStart:S.playStart};
+  var fresh=defaultState();
+  for(var k in keep) fresh[k]=keep[k];
+  fresh.runStart=Date.now();
+  S=fresh;
+  S.curRoom=0;
+  hideModal('escapeModal');
+  toast('NEW GAME+ '+S.ng+' — permanent earnings x'+(1+0.5*S.ng)+', tolls x'+Math.pow(3,S.ng)+'. Exclusive upgrades unlocked.');
+  renderAll();
+  save();
+}
+</script>
+<script>
+'use strict';
+/* ============ guardian SVG art (bold silhouettes, no emoji) ============ */
+function guardianSVG(room){
+  var a=ROOMS[room].accent;
+  if(room==='darts') return '<svg viewBox="0 0 120 120"><path d="M14 96 Q4 70 22 58 Q10 84 30 100 Z" fill="#55565f"/><ellipse cx="66" cy="78" rx="42" ry="30" fill="#6d6e78"/><circle cx="38" cy="34" r="15" fill="#6d6e78"/><circle cx="38" cy="34" r="8" fill="#e8a0a8"/><circle cx="90" cy="30" r="14" fill="#6d6e78"/><circle cx="90" cy="30" r="7" fill="#e8a0a8"/><ellipse cx="64" cy="52" rx="27" ry="21" fill="#7c7d88"/><circle cx="55" cy="50" r="4" fill="'+a+'"/><circle cx="74" cy="50" r="4" fill="'+a+'"/><ellipse cx="64" cy="60" rx="7" ry="5" fill="#e8a0a8"/><path d="M50 62 L44 58 M50 65 L43 65 M79 62 L85 58 M79 65 L86 65" stroke="#d8d8e0" stroke-width="1.6"/><path d="M56 70 Q64 74 72 70" stroke="#3c3d45" stroke-width="2" fill="none"/></svg>';
+  if(room==='scratch') return '<svg viewBox="0 0 120 120"><ellipse cx="60" cy="82" rx="46" ry="30" fill="#3f7d46"/><ellipse cx="60" cy="66" rx="38" ry="24" fill="#4c9956"/><circle cx="38" cy="40" r="13" fill="#4c9956"/><circle cx="82" cy="40" r="13" fill="#4c9956"/><circle cx="38" cy="38" r="7" fill="#fff"/><circle cx="82" cy="38" r="7" fill="#fff"/><circle cx="38" cy="39" r="3.4" fill="#14210f"/><circle cx="82" cy="39" r="3.4" fill="#14210f"/><path d="M34 68 Q60 84 86 68" stroke="#26502c" stroke-width="3.4" fill="none"/><path d="M20 26 L30 12 L42 22 L54 10 L64 22 L76 12 L84 26 Z" fill="'+a+'" stroke="#2c5c33" stroke-width="2"/></svg>';
+  if(room==='dice') return '<svg viewBox="0 0 120 120"><rect x="22" y="44" width="76" height="66" rx="12" fill="#4a5a7d"/><rect x="38" y="8" width="44" height="44" rx="9" fill="#5b6f99"/><circle cx="52" cy="22" r="4.6" fill="#e8ecf5"/><circle cx="68" cy="38" r="4.6" fill="#e8ecf5"/><circle cx="68" cy="22" r="4.6" fill="'+a+'"/><rect x="6" y="60" width="18" height="34" rx="8" fill="#42506e"/><rect x="96" y="60" width="18" height="34" rx="8" fill="#42506e"/><circle cx="42" cy="66" r="5.4" fill="#e8ecf5"/><circle cx="60" cy="84" r="5.4" fill="#e8ecf5"/><circle cx="78" cy="66" r="5.4" fill="#e8ecf5"/><circle cx="60" cy="66" r="0.1" fill="#e8ecf5"/><circle cx="52" cy="30" r="0.1" fill="#fff"/><rect x="48" y="98" width="24" height="6" rx="3" fill="#2c3852"/></svg>';
+  if(room==='sushi') return '<svg viewBox="0 0 120 120"><ellipse cx="60" cy="94" rx="36" ry="20" fill="#8a5a36"/><path d="M28 62 L20 34 L44 48 Z" fill="#a06a3e"/><path d="M92 62 L100 34 L76 48 Z" fill="#a06a3e"/><path d="M28 60 L24 42 L40 50 Z" fill="#e8a0a8"/><path d="M92 60 L96 42 L80 50 Z" fill="#e8a0a8"/><circle cx="60" cy="64" r="32" fill="#b57a45"/><circle cx="48" cy="60" r="4.4" fill="#1d130a"/><circle cx="72" cy="60" r="4.4" fill="#1d130a"/><ellipse cx="60" cy="70" rx="4" ry="3" fill="#e8a0a8"/><path d="M40 74 L26 72 M41 79 L28 81 M80 74 L94 72 M79 79 L92 81" stroke="#5e3d20" stroke-width="1.8"/><rect x="34" y="14" width="52" height="16" rx="7" fill="#f2ead2"/><rect x="30" y="28" width="60" height="8" rx="4" fill="#f2ead2"/><path d="M52 82 Q60 87 68 82" stroke="#5e3d20" stroke-width="2" fill="none"/><circle cx="98" cy="92" r="9" fill="#f2ead2"/><circle cx="98" cy="92" r="5" fill="'+a+'"/></svg>';
+  return '<svg viewBox="0 0 120 120"><path d="M34 22 Q60 2 86 22 L86 34 L34 34 Z" fill="'+a+'"/><rect x="30" y="32" width="60" height="7" fill="#caa22e"/><ellipse cx="60" cy="56" rx="26" ry="24" fill="#e9e4d4"/><circle cx="49" cy="54" r="7" fill="#17181c"/><circle cx="71" cy="54" r="7" fill="#17181c"/><path d="M60 60 L56 68 L64 68 Z" fill="#17181c"/><rect x="46" y="76" width="28" height="10" fill="#e9e4d4"/><path d="M50 78 L50 84 M57 78 L57 84 M64 78 L64 84 M70 78 L70 84" stroke="#17181c" stroke-width="2"/><path d="M38 96 Q60 88 82 96 M36 106 Q60 98 84 106" stroke="#e9e4d4" stroke-width="5" fill="none"/><rect x="54" y="86" width="12" height="16" fill="#d8d2c0"/></svg>';
+}
+/* ============ DOM helpers ============ */
+function el(id){ return document.getElementById(id); }
+function toast(msg){ var t=el('toast'); t.textContent=msg; t.style.display='block';
+  clearTimeout(toast._t); toast._t=setTimeout(function(){ t.style.display='none'; },4200); }
+function showModal(id){ el(id).classList.add('show'); }
+function hideModal(id){ el(id).classList.remove('show'); }
+function showScene(title,text){ el('sceneTitle').textContent=title; el('sceneText').textContent=text; showModal('sceneModal'); }
+function floaty(container,x,y,text,color){
+  var s=document.createElement('span'); s.className='floaty'; s.textContent=text;
+  s.style.left=x+'px'; s.style.top=y+'px'; if(color) s.style.color=color;
+  container.appendChild(s); setTimeout(function(){ s.remove(); },1150);
+}
+/* ============ rendering ============ */
+function renderTop(now){
+  var rates=passiveRates(now), gm=globalMult(now);
+  el('wallets').innerHTML=ROOM_IDS.slice(0,S.unlocked).map(function(id){
+    var r=rates[id]*gm;
+    return '<div class="wallet">'+ROOMS[id].cur+'<br><b class="num">'+fmt(S.wallets[id])+'</b>'+
+      (r>0?'<span class="rate">+'+fmt(r)+'/s auto</span>':'')+'</div>';
+  }).join('');
+  el('metal').textContent='NG+ '+S.ng+(S.lethal?' · LETHAL':'')+' · Global x'+globalMult(now).toFixed(2);
+  el('runtime').textContent=S.lethal? 'Run: '+fmtTime((now-S.runStart)/1000) : '';
+}
+function renderTabs(){
+  el('tabs').innerHTML=ROOM_IDS.map(function(id,i){
+    var locked=i>=S.unlocked;
+    var st=locked?'locked':(i===S.curRoom?'on':'');
+    var bg=i===S.curRoom? ROOMS[id].accent : '';
+    return '<button class="rtab '+st+'" data-room="'+i+'" style="'+(bg?'background:'+bg+';':'')+'">'+
+      (i+1)+'. '+ROOMS[id].name+(locked?'<span class="lk">toll: '+fmt(tollFor(i))+' '+ROOMS[ROOM_IDS[i]].cur+'</span>':'')+'</button>';
+  }).join('');
+  Array.prototype.forEach.call(el('tabs').children,function(b){
+    b.onclick=function(){ var i=+b.getAttribute('data-room'); if(i<S.unlocked){ S.curRoom=i; renderAll(); } else toast('Locked. Pay the previous guardian\'s toll first.'); };
+  });
+}
+function renderRoomHead(now){
+  var id=ROOM_IDS[S.curRoom];
+  el('guardian').innerHTML=guardianSVG(id);
+  el('roomtitle').textContent=ROOMS[id].title;
+  el('gname').textContent='Guardian: '+ROOMS[id].guardian;
+  var fill=el('tollfill'), txt=el('tolltext'), hint=el('tollhint');
+  fill.style.background=ROOMS[id].accent;
+  if(id==='wheel'){
+    var hp=S.foremanHP===null? tollFor(4) : S.foremanHP;
+    var pct=clamp(100*(1-hp/tollFor(4)),0,100);
+    fill.style.width=pct+'%';
+    txt.textContent='Foreman HP '+fmt(Math.max(0,hp))+' / '+fmt(tollFor(4));
+    hint.textContent=S.tollPaid.wheel? 'The Foreman has fallen. You escaped.' : 'Every Gem the wheel pays out chips the Foreman\'s HP.';
+  } else if(S.tollPaid[id]){
+    fill.style.width='100%'; txt.textContent='TOLL PAID';
+    hint.textContent='Gate open. This room keeps earning.';
+  } else {
+    var p=clamp(100*S.lifetime[id]/tollFor(S.curRoom),0,100);
+    fill.style.width=p+'%';
+    txt.textContent=fmt(S.lifetime[id])+' / '+fmt(tollFor(S.curRoom))+' '+ROOMS[id].cur;
+    hint.textContent='Lifetime '+ROOMS[id].cur+' toward the 1,000,000 toll (scaled by NG+/Lethal).';
+  }
+}
+function dicePips(v){
+  var pos={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8],
+    7:[0,2,3,4,5,6,8],8:[0,1,2,3,5,6,7,8],9:[0,1,2,3,4,5,6,7,8],10:[0,1,2,3,4,5,6,7,8]};
+  var cells=[[6,6],[24,6],[42,6],[6,24],[24,24],[42,24],[6,42],[24,42],[42,42]];
+  var idxs=pos[Math.min(v,10)]||[4];
+  if(v>10) idxs=[0,1,2,3,4,5,6,7,8];
+  return idxs.map(function(i){ return '<span class="pip" style="left:'+cells[i][0]+'px;top:'+cells[i][1]+'px;"></span>'; }).join('');
+}
+function renderStage(now){
+  var id=ROOM_IDS[S.curRoom], st=el('stage');
+  if(id==='darts'){
+    var d=calcDarts();
+    var marks=dartMarks.filter(function(m){return now-m.t<3000;}).map(function(m){
+      return '<circle class="dartmark" cx="'+m.x+'" cy="'+m.y+'" r="3.2" fill="#f5c542" stroke="#141310" stroke-width="1.2"/>';
+    }).join('');
+    st.innerHTML='<h3>Tap the board to throw '+d.perThrow+' dart'+(d.perThrow>1?'s':'')+'</h3>'+
+      '<p class="hint">Each tap throws with spread — aim for the bullseye (crit x'+d.crit+'). Value per dart: <b class="num">'+fmt(d.value)+'</b> Gold before zone multipliers. Automation: '+
+      (lvl('darts','gunner')?'Gunner every '+d.gunnerInt.toFixed(1)+'s · ':'')+(lvl('darts','autothrow')?'Auto Throw every '+d.atInt.toFixed(1)+'s':'no auto-throw yet')+'</p>'+
+      '<div id="boardwrap"><svg id="board" viewBox="-110 -110 220 220">'+
+      '<circle cx="0" cy="0" r="104" fill="#26272f"/><circle cx="0" cy="0" r="100" fill="#3d3a33"/>'+
+      '<circle cx="0" cy="0" r="60" fill="#7a4a2b"/><circle cx="0" cy="0" r="30" fill="#3f6212"/>'+
+      '<circle cx="0" cy="0" r="'+d.bullR+'" fill="#e5484d" stroke="#ffd7d7" stroke-width="1.5"/>'+
+      '<circle cx="0" cy="0" r="2.4" fill="#fff"/>'+marks+'</svg></div>'+
+      '<p class="hint" id="dartMsg">Outer x'+(1*d.zoneB).toFixed(1)+' · Mid x'+(2*d.zoneB).toFixed(1)+' · Inner x'+(3*d.zoneB).toFixed(1)+' · Bullseye x'+d.crit+'</p>';
+    var board=el('board');
+    board.onclick=function(ev){
+      var r=board.getBoundingClientRect();
+      var tx=((ev.clientX-r.left)/r.width)*220-110, ty=((ev.clientY-r.top)/r.height)*220-110;
+      var res=throwDartAt(tx,ty,Date.now());
+      el('dartMsg').textContent=res.label+' — +'+fmt(res.gained)+' Gold';
+      var wrap=el('boardwrap');
+      floaty(wrap, ev.clientX-wrap.getBoundingClientRect().left-10, ev.clientY-wrap.getBoundingClientRect().top-24, '+'+fmt(res.gained));
+      renderStage(Date.now()); renderTop(Date.now()); renderRoomHead(Date.now());
+    };
+  }
+  else if(id==='scratch'){
+    var sc=calcScratch();
+    var cellsHtml='';
+    if(curTicket){
+      cellsHtml='<div id="cells">'+curTicket.cells.map(function(c,i){
+        var cls='cell'+(c.open?(c.jack?' jack':(curTicket.bestId&&c.sym&&c.sym.id===curTicket.bestId?' win':' open')):'');
+        var label=!c.open?'SCRATCH':(c.jack?'JACKPOT':c.sym.label);
+        return '<div class="'+cls+'" data-cell="'+i+'">'+label+'</div>';
+      }).join('')+'</div>'+(curTicket.resolved?'<p class="hint">'+(curTicket.note||'')+'</p>':'<p class="hint">Tap each panel to reveal. 3 of a kind pays.</p>');
+    }
+    st.innerHTML='<h3>Scratch-Off Tickets — $'+fmt(sc.price)+' each</h3>'+
+      '<p class="hint">Reveal all '+sc.cells+' panels. 3 of a kind pays by tier (Clover x0.5 … Star x50), scaled by upgrades. A JACKPOT panel grants a permanent all-room bonus. Ticket level: '+ticketLevel()+' (EXP '+Math.floor(S.ticketXp)+') · Jackpots found: '+S.jackpots.length+'/'+JACKPOTS.length+'</p>'+
+      cellsHtml+
+      '<button class="bigbtn" id="buyTicketBtn" '+(curTicket&&!curTicket.resolved?'disabled':'')+'>'+(curTicket?'Buy New Ticket — $':'Buy Ticket — $')+fmt(sc.price)+'</button>'+
+      (lvl('scratch','glove')&&curTicket&&!curTicket.resolved?'<button class="smallbtn" id="revealAllBtn" style="margin-top:6px;">Reveal All</button>':'')+
+      '<button class="smallbtn" id="hustleBtn" style="margin-top:6px;">Side Hustle (+2 Cash)</button>';
+    el('buyTicketBtn').onclick=function(){ var t=buyTicket(true); if(!t){ toast('Not enough Cash.'); return; } renderAll(); };
+    if(el('revealAllBtn')) el('revealAllBtn').onclick=function(){ curTicket.cells.forEach(function(c,i){ revealCell(i); }); renderAll(); };
+    el('hustleBtn').onclick=function(){ hustle('scratch'); renderAll(); };
+    Array.prototype.forEach.call(st.querySelectorAll('.cell'),function(c){
+      c.onclick=function(){ revealCell(+c.getAttribute('data-cell')); renderStage(Date.now()); renderTop(Date.now()); };
+    });
+  }
+  else if(id==='dice'){
+    var dc=calcDice(now);
+    var stacks=S.diceStacks.filter(function(s){return s.exp>now;}).map(function(s){
+      return '<span class="stackchip">'+s.label+' · '+Math.ceil((s.exp-now)/1000)+'s</span>'; }).join('');
+    st.innerHTML='<h3>Dice — '+dc.n+'d'+dc.sides+' · '+fmt(dc.pipV)+' Chips per pip</h3>'+
+      '<div id="diceRow">'+(lastRoll.length?lastRoll:Array.from({length:dc.n},function(){return 1;})).map(function(v){
+        if(v>9) return '<div class="die"><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:23px;font-weight:bold;color:#22242c;font-family:\'Courier New\',monospace;">'+v+'</span></div>';
+        return '<div class="die">'+dicePips(v)+'</div>'; }).join('')+'</div>'+
+      '<p class="hint" id="diceMsg">Combos grant GLOBAL multiplier stacks: Pair x1.25 · Straight x1.5 · Hot Roll x1.35 · All Same x2. Dice multiplier right now: <b>x'+diceMult(now).toFixed(2)+'</b></p>'+
+      '<div id="stacks">'+stacks+'</div>'+
+      '<button class="bigbtn" id="rollBtn">ROLL THE DICE</button>'+
+      '<h3 style="margin-top:14px;">Pachinko Station</h3>'+
+      '<p class="hint">Drop '+dc.balls+' ball'+(dc.balls>1?'s':'')+' for '+fmt(dc.ballCost*dc.balls)+' Chips. Slots pay a share of '+fmt(dc.ballPay)+' Chips x slot value.</p>'+
+      '<svg id="pach" viewBox="0 0 300 190">'+pachPegs()+'<circle id="pachBall" cx="150" cy="8" r="6" fill="#f5c542" style="display:none;"/></svg>'+
+      '<div id="slots">'+PACH_SLOTS.map(function(s){ return '<div class="slot">'+s+'x</div>'; }).join('')+'</div>'+
+      '<button class="bigbtn" id="dropBtn">DROP BALL — '+fmt(dc.ballCost*dc.balls)+' Chips</button>'+
+      '<button class="smallbtn" id="hustleBtn" style="margin-top:6px;">Side Hustle (+'+fmt(dc.hustle)+' Chips)</button>';
+    el('rollBtn').onclick=function(){
+      Array.prototype.forEach.call(st.querySelectorAll('.die'),function(d){ d.classList.add('shake'); });
+      setTimeout(function(){ var r=rollDice(Date.now()); renderAll();
+        el('diceMsg').innerHTML=(r.combo? '<b>'+r.combo+'</b> · ':'')+'Rolled '+r.vals.join('+')+' = '+r.sum+' → +'+fmt(r.gained)+' Chips';
+      },260);
+    };
+    el('dropBtn').onclick=function(){ animatePachinko(); };
+    el('hustleBtn').onclick=function(){ hustle('dice'); renderAll(); };
+  }
+  else if(id==='sushi'){
+    var su=calcSushi();
+    var cookHtml='';
+    if(S.cook.busy && S.cook.choices){
+      cookHtml='<p class="hint">The dish is ready. Choose ONE effect — it stacks forever:</p><div id="dishRow">'+
+        S.cook.choices.map(function(d){ return '<button class="dish" data-dish="'+d.id+'"><b>'+d.name+'</b>'+d.desc+'</button>'; }).join('')+'</div>'+
+        (lvl('sushi','reroll')&&!S.cook.rerolled?'<button class="smallbtn" id="rerollBtn" style="margin-top:6px;">Reroll choices</button>':'');
+    } else if(S.cook.busy){
+      cookHtml='<p class="hint" id="cookStatus">Cooking… ready in '+Math.max(0,Math.ceil((S.cook.readyAt-now)/1000))+'s. '+(lvl('sushi','autocook')?'Auto Cook will pick a dish.':'Come back to this room to choose the dish.')+'</p>'+
+        '<div class="barwrap"><div class="barfill" id="cookBar" style="background:#f0833a;width:'+clamp(100*(1-(S.cook.readyAt-now)/(su.cookTime*1000/autoSpeed())),0,100)+'%"></div></div>';
+    } else {
+      cookHtml='<button class="bigbtn" id="cookBtn">COOK A DISH — '+fmt(su.cookCost)+' Bites · '+su.cookTime.toFixed(0)+'s</button>';
+    }
+    var dishList=DISHES.map(function(d){ var c=dishCount(d.id); return c>0? d.name+' x'+c : null; }).filter(Boolean).join(' · ');
+    st.innerHTML='<h3>The Kitchen — tap to roll &amp; serve sushi</h3>'+
+      '<p class="hint">Each serve pays <b class="num">'+fmt(su.serve*su.serves)+'</b> Bites. Dishes cooked: '+S.cooks+(dishList?'<br>Learned: '+dishList:'')+'</p>'+
+      '<button class="bigbtn" id="serveBtn">ROLL &amp; SERVE (+'+fmt(su.serve*su.serves)+' Bites)</button>'+
+      cookHtml+
+      '<button class="smallbtn" id="hustleBtn" style="margin-top:6px;">Side Hustle (+'+fmt(su.hustle)+' Bites)</button>';
+    el('serveBtn').onclick=function(ev){ var g=serveTap(Date.now());
+      floaty(st, ev.clientX-st.getBoundingClientRect().left-10, ev.clientY-st.getBoundingClientRect().top-20, '+'+fmt(g));
+      renderTop(Date.now()); renderRoomHead(Date.now()); };
+    if(el('cookBtn')) el('cookBtn').onclick=function(){ if(!startCook()) toast('Not enough Bites to cook.'); renderAll(); };
+    if(el('rerollBtn')) el('rerollBtn').onclick=function(){ S.cook.choices=rollDishChoices(); S.cook.rerolled=true; renderAll(); };
+    Array.prototype.forEach.call(st.querySelectorAll('.dish'),function(b){
+      b.onclick=function(){ chooseDish(b.getAttribute('data-dish')); renderAll(); };
+    });
+    el('hustleBtn').onclick=function(){ hustle('sushi'); renderAll(); };
+  }
+  else if(id==='wheel'){
+    var wh=calcWheel();
+    var segSvg=wh.segs.map(function(s,i){
+      var a0=i*45, a1=a0+45, mid=(a0+a1)/2*Math.PI/180;
+      var x0=150+140*Math.cos(a0*Math.PI/180), y0=150+140*Math.sin(a0*Math.PI/180);
+      var x1=150+140*Math.cos(a1*Math.PI/180), y1=150+140*Math.sin(a1*Math.PI/180);
+      var lx=150+88*Math.cos(mid), ly=150+88*Math.sin(mid);
+      var col=i%2? '#2c2140':'#3a2c10';
+      if(s>=1000) col='#6b5410';
+      return '<path d="M150 150 L'+x0.toFixed(1)+' '+y0.toFixed(1)+' A140 140 0 0 1 '+x1.toFixed(1)+' '+y1.toFixed(1)+' Z" fill="'+col+'" stroke="#f5c542" stroke-width="1.5"/>'+
+        '<text x="'+lx.toFixed(1)+'" y="'+ly.toFixed(1)+'" fill="#ffedb5" font-size="17" font-weight="bold" text-anchor="middle" transform="rotate('+((a0+a1)/2+90)+' '+lx.toFixed(1)+' '+ly.toFixed(1)+')">'+s+'x</text>';
+    }).join('');
+    st.innerHTML='<h3>The Prize Wheel — bet '+fmt(wh.bet)+' Gems per spin'+(wh.spins>1?' x'+wh.spins:'')+'</h3>'+
+      '<p class="hint">Payouts land as Gems AND damage the Foreman (x'+wh.dmgB.toFixed(1)+' damage). '+(lvl('wheel','autospin')?'Auto Spin every '+wh.asInt.toFixed(1)+'s.':'')+'</p>'+
+      '<div id="wheelwrap"><div id="wheelPointer"></div>'+
+      '<svg id="wheelSvg" viewBox="0 0 300 300"><g id="wheelG">'+segSvg+'<circle cx="150" cy="150" r="30" fill="#17181c" stroke="#f5c542" stroke-width="2"/></g></svg></div>'+
+      '<p class="hint" id="wheelMsg">Deplete the Foreman\'s HP to escape the Mill.</p>'+
+      '<button class="bigbtn" id="spinBtn">SPIN — '+fmt(wh.bet*wh.spins)+' Gems</button>'+
+      '<button class="smallbtn" id="hustleBtn" style="margin-top:6px;">Side Hustle (+'+fmt(wh.hustle)+' Gems)</button>';
+    el('spinBtn').onclick=function(){
+      if(wheelBusy) return;
+      var c=calcWheel();
+      if(S.wallets.wheel<c.bet*c.spins){ toast('Not enough Gems.'); return; }
+      /* choose visual target from the first spin result */
+      wheelBusy=true; SFX.spin();
+      var pre=spinWheel(Date.now(),false);
+      var idx=pre[0].idx;
+      var targetRot=360*5 + (360 - (idx*45+22.5)) - 90;
+      var g=el('wheelG');
+      g.style.transition='transform 3.6s cubic-bezier(.12,.8,.16,1)';
+      g.style.transformOrigin='150px 150px';
+      g.style.transform='rotate('+targetRot+'deg)';
+      setTimeout(function(){
+        wheelBusy=false;
+        var total=pre.reduce(function(a,r){return a+r.pay;},0);
+        el('wheelMsg').innerHTML='Landed <b>'+pre.map(function(r){return r.seg+'x';}).join(', ')+'</b> → +'+fmt(total*globalMult(Date.now()))+' Gems, Foreman takes '+fmt(total*c.dmgB)+' damage.';
+        if(g){ g.style.transition='none'; g.style.transform='rotate(0deg)'; }
+        renderAll();
+      },3750);
+    };
+    el('hustleBtn').onclick=function(){ hustle('wheel'); renderAll(); };
+  }
+}
+function pachPegs(){
+  var out='';
+  for(var row=0;row<6;row++){
+    var n=row+3, y=34+row*22;
+    for(var i=0;i<n;i++){ var x=150+(i-(n-1)/2)*26; out+='<circle cx="'+x+'" cy="'+y+'" r="3" fill="#8f96ad"/>'; }
+  }
+  return out;
+}
+function animatePachinko(){
+  var res=pachinkoDrop(Date.now(),true);
+  if(!res){ toast('Not enough Chips.'); return; }
+  renderTop(Date.now()); renderRoomHead(Date.now());
+  var ball=el('pachBall'); if(!ball) return;
+  ball.style.display='block';
+  var slot=res[0].slot;
+  var targetX=18+slot*33, x=150, y=8, steps=0;
+  var iv=setInterval(function(){
+    steps++; y+=9; x+= (targetX-x)*0.06 + rand(-7,7);
+    if(y>168){ y=168; x=targetX; clearInterval(iv); setTimeout(function(){ ball.style.display='none'; renderAll(); },350); }
+    ball.setAttribute('cx',x); ball.setAttribute('cy',y);
+    if(steps%3===0) SFX.plink();
+  },40);
+  var msg=res.map(function(r){return 'Slot '+r.mult+'x → +'+fmt(r.pay*globalMult(Date.now()));}).join(' · ');
+  toast('Pachinko: '+msg+' Chips');
+}
+function renderShop(){
+  var id=ROOM_IDS[S.curRoom];
+  el('shoptitle').textContent=ROOMS[id].name+' Upgrades — '+ROOMS[id].cur;
+  var list=UPGRADES[id].filter(function(u){ return !u.ng || S.ng>=u.ng; });
+  el('shoplist').innerHTML=list.map(function(u){
+    var l=lvl(id,u.id), maxed=l>=u.max;
+    var cost=maxed?null:u.cost(l);
+    var afford=!maxed && S.wallets[id]>=cost;
+    return '<div class="upg'+(maxed?' maxed':'')+(u.ng?' ngx':'')+'"><div class="ui">'+
+      '<div class="un">'+u.name+' <span style="color:#9a97a8;">Lv '+l+'/'+u.max+'</span>'+(u.ng?' <span class="tagng">NG+</span>':'')+'</div>'+
+      '<div class="ud">'+u.d(l)+'</div></div>'+
+      (maxed?'<div class="uc">MAX</div>':'<button class="buybtn" data-upg="'+u.id+'" data-cost="'+cost+'" '+(afford?'':'disabled')+'>Buy<br><span class="num">'+fmt(cost)+'</span></button>')+
+      '</div>';
+  }).join('');
+  renderShop._sig=shopSig();
+  Array.prototype.forEach.call(el('shoplist').querySelectorAll('.buybtn'),function(b){
+    b.onclick=function(){ buyUpgrade(id,b.getAttribute('data-upg')); };
+  });
+}
+function shopSig(){ return ROOM_IDS[S.curRoom]+'|'+JSON.stringify(S.up[ROOM_IDS[S.curRoom]])+'|'+S.ng; }
+function tickShop(){
+  if(shopSig()!==renderShop._sig){ renderShop(); return; }
+  var id=ROOM_IDS[S.curRoom];
+  Array.prototype.forEach.call(el('shoplist').querySelectorAll('.buybtn'),function(b){
+    b.disabled=S.wallets[id]<(+b.getAttribute('data-cost'));
+  });
+}
+function buyUpgrade(room,upgId){
+  var def=null; UPGRADES[room].forEach(function(u){ if(u.id===upgId) def=u; });
+  if(!def) return;
+  var bought=0;
+  while(lvl(room,upgId)<def.max){
+    var c=def.cost(lvl(room,upgId));
+    if(S.wallets[room]<c) break;
+    S.wallets[room]-=c; S.up[room][upgId]=lvl(room,upgId)+1; bought++;
+    if(!S.buyMax) break;
+  }
+  if(bought>0){ SFX.coin(); }
+  renderAll(); save();
+}
+function renderAll(){
+  var now=Date.now();
+  renderTop(now); renderTabs(); renderRoomHead(now); renderStage(now); renderShop();
+}
+/* ============ settings / wiring ============ */
+function wire(){
+  el('sceneOk').onclick=function(){ hideModal('sceneModal'); renderAll(); };
+  el('offlineOk').onclick=function(){ hideModal('offlineModal'); };
+  el('ngBtn').onclick=function(){ doNGPlus(); };
+  el('stayBtn').onclick=function(){ S.escapedSeen=true; hideModal('escapeModal'); };
+  el('settingsBtn').onclick=function(){
+    el('muteChk').checked=!!S.muted;
+    var lc=el('lethalChk'); lc.checked=!!S.lethal; lc.disabled=!S.firstClear;
+    showModal('settingsModal');
+  };
+  el('settingsOk').onclick=function(){ hideModal('settingsModal'); };
+  el('muteChk').onchange=function(){ S.muted=el('muteChk').checked; save(); };
+  el('lethalChk').onchange=function(){ S.lethal=el('lethalChk').checked; S.runStart=Date.now(); renderAll(); save(); };
+  el('resetBtn').onclick=function(){
+    if(confirm('Reset ALL Fortune Mill progress permanently?')){
+      if(confirm('Really sure? This deletes your save.')){
+        try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
+        S=defaultState(); curTicket=null; lastRoll=[]; dartMarks=[];
+        hideModal('settingsModal'); renderAll(); save();
+        toast('Save wiped. Back in Box #724 you go.');
+      }
+    }
+  };
+  el('buymax').checked=!!S.buyMax;
+  el('buymax').onchange=function(){ S.buyMax=el('buymax').checked; save(); };
+  document.addEventListener('visibilitychange',function(){ if(document.hidden) save(); });
+  window.addEventListener('beforeunload',save);
+}
+/* ============ offline earnings ============ */
+function applyOffline(){
+  var now=Date.now();
+  var elapsed=(now-(S.lastSeen||now))/1000;
+  if(elapsed<120) return;
+  var capped=Math.min(elapsed,8*3600);
+  var rates=passiveRates(now), gm=globalMult(now);
+  var lines=[], totalRooms=0;
+  ROOM_IDS.slice(0,S.unlocked).forEach(function(id){
+    var amt=rates[id]*gm*capped;
+    if(id==='dice') amt*=calcDice(now).roomB;
+    if(amt>=1){ S.wallets[id]+=amt; S.lifetime[id]+=amt; totalRooms++;
+      lines.push(ROOMS[id].cur+': +'+fmt(amt)); checkToll(id); }
+  });
+  if(lines.length){
+    el('offlineText').innerHTML='You were gone '+fmtTime(elapsed)+(elapsed>8*3600?' (capped at 8h)':'')+
+      '. Your helpers kept working:<br><b>'+lines.join('<br>')+'</b>';
+    showModal('offlineModal');
+  }
+}
+/* ============ init + main loop ============ */
+var hadSave=load();
+S.muted=!!S.muted;
+if(S.curRoom>=S.unlocked) S.curRoom=0;
+if(S.foremanHP===null && S.unlocked>=5) S.foremanHP=tollFor(4);
+wire();
+applyOffline();
+renderAll();
+setInterval(save,5000);
+/* light per-tick stage updates: never rebuilds the stage (would kill wheel/dice animations) */
+function tickStage(now){
+  var id=ROOM_IDS[S.curRoom];
+  if(id==='sushi'){
+    var needChoices=!!(S.cook.busy&&S.cook.choices);
+    var hasChoices=!!el('dishRow');
+    if(needChoices!==hasChoices){ renderStage(now); return; }
+    if(S.cook.busy&&!S.cook.choices){
+      var cs=el('cookStatus');
+      if(cs){ var su=calcSushi();
+        cs.innerHTML='Cooking… ready in '+Math.max(0,Math.ceil((S.cook.readyAt-now)/1000))+'s. '+(lvl('sushi','autocook')?'Auto Cook will pick a dish.':'Come back to this room to choose the dish.');
+        var bar=el('cookBar'); if(bar) bar.style.width=clamp(100*(1-(S.cook.readyAt-now)/(su.cookTime*1000/autoSpeed())),0,100)+'%';
+      } else renderStage(now);
+    }
+    if(!S.cook.busy && el('cookBtn')){ /* affordability handled by click toast */ }
+    if(!S.cook.busy && !el('cookBtn')) renderStage(now);
+  }
+  if(id==='dice'){
+    var stEl=el('stacks');
+    if(stEl){ stEl.innerHTML=S.diceStacks.filter(function(s){return s.exp>now;}).map(function(s){
+      return '<span class="stackchip">'+s.label+' · '+Math.ceil((s.exp-now)/1000)+'s</span>'; }).join(''); }
+  }
+  if(id==='darts'){ /* marks refresh on next throw; no periodic rebuild (would wipe the result line) */ }
+}
+var lastTick=Date.now();
+setInterval(function(){
+  var now=Date.now();
+  var dt=(now-lastTick)/1000; lastTick=now;
+  if(dt>0){ automationTick(now,Math.min(dt,5)); }
+  renderTop(now); renderRoomHead(now);
+  tickStage(now); tickShop();
+},400);
+/* test/debug handle */
+window.FM={get S(){return S;}, set S(v){S=v;}, gain:gain, buyUpgrade:buyUpgrade,
+  throwDartAt:throwDartAt, buyTicket:buyTicket, revealCell:revealCell, rollDice:rollDice,
+  pachinkoDrop:pachinkoDrop, serveTap:serveTap, startCook:startCook, chooseDish:chooseDish,
+  spinWheel:spinWheel, calcDarts:calcDarts, calcScratch:calcScratch, calcDice:calcDice,
+  calcSushi:calcSushi, calcWheel:calcWheel, globalMult:globalMult, passiveRates:passiveRates,
+  tollFor:tollFor, checkToll:checkToll, doNGPlus:doNGPlus, save:save, load:load,
+  defaultState:defaultState, renderAll:renderAll, getTicket:function(){return curTicket;}};
+</script>
+</body>
+</html>
